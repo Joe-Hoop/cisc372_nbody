@@ -17,7 +17,7 @@ __global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector
 
 	// first compute the pairwise accelerations.  Effect is on the first argument.
 	int indexX = blockIdx.x * blockDim.x + threadIdx.x;
-	int indexY = blockIdx.Y * blockDim.Y + threadIdx.Y;
+	int indexY = blockIdx.y * blockDim.y + threadIdx.y;
 	int strideX = blockDim.x * gridDim.x;
 	int strideY = blockDim.y * gridDim.y;
 	for (i = indexX; i < NUMENTITIES; i += strideX)
