@@ -99,6 +99,7 @@ void printSystem(FILE *handle)
 
 int main(int argc, char **argv)
 {
+#define BLOCK_SIZE 16
 	clock_t t0 = clock();
 	int t_now;
 	// srand(time(NULL));
@@ -111,13 +112,13 @@ int main(int argc, char **argv)
 	printSystem(stdout);
 #endif
 	printf("In the right block\n");
-	int blockSize = (16, 16);
-	int gridSize = ((NUMENTITIES + blockSize - 1) / blockSize.x, (NUMENTITIES + blockSize - 1) / blockSize.y);
+	dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+	dim3 dimGrid((NUMENTITIES + blockSize - 1) / blockSize.x, (NUMENTITIES + blockSize - 1) / blockSize.y);
 	vector3 *values = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES * NUMENTITIES);
 	vector3 **accels = (vector3 **)malloc(sizeof(vector3 *) * NUMENTITIES);
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
-		compute<<<gridSize, blockSize>>>(values, accels, hPos, hVel, mass);
+		compute<<<dimGrid, dimBlock>>>(values, accels, hPos, hVel, mass);
 		cudaDeviceSynchronize();
 	}
 	free(accels);
