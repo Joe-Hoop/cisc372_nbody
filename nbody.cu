@@ -111,13 +111,13 @@ int main(int argc, char **argv)
 	printSystem(stdout);
 #endif
 	printf("In the right block\n");
-	int blockSize = 100;
-	int numBlocks = (NUMENTITIES + blockSize - 1) / blockSize;
+	int blockSize = (16, 16);
+	int gridSize = ((NUMENTITIES + blockSize - 1) / blockSize.x, (NUMENTITIES + blockSize - 1) / blockSize.y);
 	vector3 *values = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES * NUMENTITIES);
 	vector3 **accels = (vector3 **)malloc(sizeof(vector3 *) * NUMENTITIES);
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
-		compute<<<numBlocks, blockSize>>>(values, accels, hPos, hVel, mass);
+		compute<<<gridSize, blockSize>>>(values, accels, hPos, hVel, mass);
 		cudaDeviceSynchronize();
 	}
 	free(accels);
