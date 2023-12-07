@@ -110,12 +110,14 @@ int main(int argc, char **argv)
 #ifdef DEBUG
 	printSystem(stdout);
 #endif
+	printf("In the right block\n");
 	int blockSize = 100;
 	int numBlocks = (NUMENTITIES + blockSize - 1) / blockSize;
 	vector3 *values = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES * NUMENTITIES);
 	vector3 **accels = (vector3 **)malloc(sizeof(vector3 *) * NUMENTITIES);
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
+		printf("Running Kernel\n");
 		compute<<<numBlocks, blockSize>>>(values, accels, hPos, hVel, mass);
 	}
 	free(accels);

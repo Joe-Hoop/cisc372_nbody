@@ -41,7 +41,7 @@ __global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector
 	}
 	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
 	__syncthreads();
-	for (i = 0; i < NUMENTITIES; i++)
+	for (i = index; i < NUMENTITIES; i += stride)
 	{
 		vector3 accel_sum = {0, 0, 0};
 		for (j = 0; j < NUMENTITIES; j++)
