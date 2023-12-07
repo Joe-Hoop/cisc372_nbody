@@ -14,15 +14,18 @@ __global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector
 	int i, j, k;
 	// vector3* values=(vector3*)malloc(sizeof(vector3)*NUMENTITIES*NUMENTITIES);
 	// vector3** accels=(vector3**)malloc(sizeof(vector3*)*NUMENTITIES);
-	for (i = 0; i < NUMENTITIES; i++)
-		accels[i] = &values[i * NUMENTITIES];
-	// first compute the pairwise accelerations.  Effect is on the first argument.
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	int stride = blockDim.x * gridDim.x;
 
-	for (i = index; i < NUMENTITIES; i += stride)
+	// first compute the pairwise accelerations.  Effect is on the first argument.
+	int indexX = blockIdx.x * blockDim.x + threadIdx.x;
+	int indexY = blockIdx.Y * blockDim.Y + threadIdx.Y;
+	int strideX = blockDim.x * gridDim.x;
+	int strideY = blockDim.y * gridDim.y;
+	for (i = indexX; i < NUMENTITIES; i += strideX)
+		accels[i] = &values[i * NUMENTITIES];
+
+	for (i = indexX; i < NUMENTITIES; i += strideX)
 	{
-		for (j = 0; j < NUMENTITIES; j++)
+		for (j = indexY; j < NUMENTITIES; j += strideY)
 		{
 			if (i == j)
 			{
@@ -42,7 +45,7 @@ __global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector
 	}
 	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
 	__syncthreads();
-	for (i = index; i < NUMENTITIES; i += stride)
+	for (i = 0; i < NUMENTITIES; i++)
 	{
 		vector3 accel_sum = {0, 0, 0};
 		for (j = 0; j < NUMENTITIES; j++)
