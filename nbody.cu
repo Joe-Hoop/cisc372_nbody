@@ -117,8 +117,8 @@ int main(int argc, char **argv)
 	vector3 **accels = (vector3 **)malloc(sizeof(vector3 *) * NUMENTITIES);
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
-		printf("Running Kernel\n");
 		compute<<<numBlocks, blockSize>>>(values, accels, hPos, hVel, mass);
+		cudaDeviceSynchronize();
 	}
 	free(accels);
 	free(values);
