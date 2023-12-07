@@ -5,7 +5,8 @@
 #include "vector.h"
 #include "config.h"
 #include "planets.h"
-#include "compute.h"
+#include <cuda_runtime.h>
+#include "compute.cu"
 
 // represents the objects in the system.  Global variables
 vector3 *hVel, *d_hVel;
@@ -111,10 +112,14 @@ int main(int argc, char **argv)
 #endif
 	int blockSize = 100;
 	int numBlocks = (NUMENTITIES + blockSize - 1) / blockSize;
+	vector3 *values = (vector3 *)malloc(sizeof(vector3) * NUMENTITIES * NUMENTITIES);
+	vector3 **accels = (vector3 **)malloc(sizeof(vector3 *) * NUMENTITIES);
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
-		compute<<<numBlocks, blockSize>>>();
+		compute<<<numBlocks, blockSize>>>(values, accels, hPos, hVel, mass);
 	}
+	free(accels);
+	free(values);
 	clock_t t1 = clock() - t0;
 #ifdef DEBUG
 	printSystem(stdout);
