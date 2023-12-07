@@ -117,8 +117,6 @@ int main(int argc, char **argv)
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
 		compute<<<numBlocks, blockSize>>>(values, accels, hPos, hVel, mass);
-		cudaDeviceSynchronize();
-		sumCompute(accels, hPos, hVel);
 	}
 	free(accels);
 	free(values);
