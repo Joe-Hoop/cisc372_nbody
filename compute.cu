@@ -7,7 +7,7 @@
 // Parameters: None
 // Returns: None
 // Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
-__global__ void compute(vector3 *values, vector3 **accels, double *mass)
+__global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector3 *hVel, double *mass)
 {
 	// make an acceleration matrix which is NUMENTITIES squared in size;
 	int i, j, k;
@@ -43,8 +43,9 @@ __global__ void compute(vector3 *values, vector3 **accels, double *mass)
 	__syncthreads();
 }
 
-void sumCompute(vector3 *hPos, vector3 *hVel)
+void sumCompute(vector3 **accels, vector3 *hPos, vector3 *hVel)
 {
+	int i, j, k;
 	for (i = 0; i < NUMENTITIES; i++)
 	{
 		vector3 accel_sum = {0, 0, 0};
