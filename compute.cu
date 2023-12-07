@@ -7,7 +7,7 @@
 // Parameters: None
 // Returns: None
 // Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
-__global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector3 *hVel, double *mass)
+__global__ void compute(vector3 *values, vector3 **accels, double *mass)
 {
 	// make an acceleration matrix which is NUMENTITIES squared in size;
 	int i, j, k;
@@ -40,7 +40,11 @@ __global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector
 		}
 	}
 	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
-	cudaDeviceSynchronize();
+	__syncthreads();
+}
+
+void sumCompute(vector3 *hPos, vector3 *hVel)
+{
 	for (i = 0; i < NUMENTITIES; i++)
 	{
 		vector3 accel_sum = {0, 0, 0};
