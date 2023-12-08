@@ -31,7 +31,7 @@ void initDeviceMemory(int numObjects)
 	cudaMalloc(&d_hVel, sizeof(vector3) * numObjects);
 	cudaMalloc(&d_hPos, sizeof(vector3) * numObjects);
 	cudaMalloc(&d_values, sizeof(vector3) * numObjects * numObjects);
-	cudaMalloc(&d_accels, sizeof(vector3) * numObjects);
+	cudaMalloc(&d_accels, sizeof(vector3 *) * numObjects);
 	cudaMalloc(&d_mass, sizeof(double) * numObjects);
 }
 
@@ -138,13 +138,12 @@ int main(int argc, char **argv)
 	dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 	dim3 dimGrid((NUMENTITIES + BLOCK_SIZE - 1) / dimBlock.x, (NUMENTITIES + BLOCK_SIZE - 1) / dimBlock.y);
 
-	cudaMalloc(&d_hVel, sizeof(vector3) * numObjects);
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
 		cudaMemcpy(d_hPos, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
 		cudaMemcpy(d_hVel, hVel, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
 		cudaMemcpy(d_values, values, sizeof(vector3) * NUMENTITIES * NUMENTITIES, cudaMemcpyHostToDevice);
-		cudaMemcpy(d_accels, accels, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
+		cudaMemcpy(d_accels, accels, sizeof(vector3 *) * NUMENTITIES, cudaMemcpyHostToDevice);
 		cudaMemcpy(d_mass, mass, sizeof(double) * NUMENTITIES, cudaMemcpyHostToDevice);
 
 		compute<<<dimGrid, dimBlock>>>(d_values, d_accels, d_hPos, d_hVel, d_mass);
@@ -152,7 +151,7 @@ int main(int argc, char **argv)
 		cudaMemcpy(hPos, d_hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
 		cudaMemcpy(hVel, d_hVel, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
 		cudaMemcpy(values, d_values, sizeof(vector3) * NUMENTITIES * NUMENTITIES, cudaMemcpyDeviceToHost);
-		cudaMemcpy(accels, d_accels, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
+		cudaMemcpy(accels, d_accels, sizeof(vector3 *) * NUMENTITIES, cudaMemcpyDeviceToHost);
 		cudaMemcpy(mass, d_mass, sizeof(double) * NUMENTITIES, cudaMemcpyDeviceToHost);
 	}
 
