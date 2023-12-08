@@ -35,10 +35,10 @@ void initDeviceMemory(int numObjects)
 	cudaMalloc(&d_hVel, sizeof(vector3) * numObjects);
 	cudaMalloc(&d_hPos, sizeof(vector3) * numObjects);
 	cudaMalloc(&d_values, sizeof(vector3) * numObjects * numObjects);
-	cudaMalloc(&d_accels, sizeof(vector3) * numObjects);
+	cudaMalloc(&d_accels, sizeof(vector3 *) * numObjects);
 	for (int i = 0; i < numObjects; i++)
 	{
-		cudaMalloc(&accels[i], sizeof(vector3 *) * numObjects);
+		cudaMalloc(&d_accels[i], sizeof(vector3) * numObjects);
 	}
 	cudaMalloc(&d_mass, sizeof(double) * numObjects);
 }
@@ -52,7 +52,7 @@ void freeHostMemory()
 	free(hVel);
 	free(hPos);
 	free(mass);
-	for (int i = 0; i < numObjects; i++)
+	for (int i = 0; i < NUMENTITIES; i++)
 	{
 		free(accels[i]);
 	}
@@ -65,7 +65,7 @@ void freeDeviceMemory()
 	cudaFree(d_hVel);
 	cudaFree(d_hPos);
 	cudaFree(d_mass);
-	for (int i = 0; i < numObjects; i++)
+	for (int i = 0; i < NUMENTITIES; i++)
 	{
 		cudaFree(d_accels[i]);
 	}
