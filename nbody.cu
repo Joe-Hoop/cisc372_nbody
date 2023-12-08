@@ -153,77 +153,22 @@ int main(int argc, char **argv)
 	printf("In the right block\n");
 	dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 	dim3 dimGrid((NUMENTITIES + BLOCK_SIZE - 1) / dimBlock.x, (NUMENTITIES + BLOCK_SIZE - 1) / dimBlock.y);
-	cudaError_t err;
 	for (t_now = 0; t_now < DURATION; t_now += INTERVAL)
 	{
 		cudaMemcpy(d_hPos, hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "1. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(d_hVel, hVel, sizeof(vector3) * NUMENTITIES, cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "2. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(d_values, values, sizeof(vector3) * NUMENTITIES * NUMENTITIES, cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "3. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(d_accels, accels, sizeof(vector3 *) * NUMENTITIES, cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "4. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(d_mass, mass, sizeof(double) * NUMENTITIES, cudaMemcpyHostToDevice);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "5. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
+
 		compute<<<dimGrid, dimBlock>>>(d_values, d_accels, d_hPos, d_hVel, d_mass);
 		cudaDeviceSynchronize();
 		err = cudaGetLastError();
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "Kernel launch error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(hPos, d_hPos, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "6. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(hVel, d_hVel, sizeof(vector3) * NUMENTITIES, cudaMemcpyDeviceToHost);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "7. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(values, d_values, sizeof(vector3) * NUMENTITIES * NUMENTITIES, cudaMemcpyDeviceToHost);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "8. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(accels, d_accels, sizeof(vector3 *) * NUMENTITIES, cudaMemcpyDeviceToHost);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "9. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 		cudaMemcpy(mass, d_mass, sizeof(double) * NUMENTITIES, cudaMemcpyDeviceToHost);
-		if (err != cudaSuccess)
-		{
-			fprintf(stderr, "10. Memcpy H2D error: %s\n", cudaGetErrorString(err));
-			// Handle the error appropriately
-		}
 	}
 
 	clock_t t1 = clock() - t0;
@@ -231,7 +176,7 @@ int main(int argc, char **argv)
 	printSystem(stdout);
 #endif
 	printf("This took a total time of %f seconds\n", (double)t1 / CLOCKS_PER_SEC);
-
 	freeHostMemory();
-	freeDeviceMemory();
+	printf("Freed Host, now device:\n")
+		freeDeviceMemory();
 }
