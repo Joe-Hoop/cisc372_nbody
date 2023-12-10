@@ -2,63 +2,72 @@
 #include <math.h>
 #include "vector.h"
 #include "config.h"
+#include <stdio.h>
 #include <cuda_runtime.h>
+#include "compute.h"
 
-// compute: Updates the positions and locations of the objects in the system based on gravity.
-// Parameters: None
-// Returns: None
-// Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
-__global__ void compute(vector3 *values, vector3 **accels, vector3 *hPos, vector3 *hVel, double *mass)
-{
-	// make an acceleration matrix which is NUMENTITIES squared in size;
-	int i, j, k;
-	// vector3* values=(vector3*)malloc(sizeof(vector3)*NUMENTITIES*NUMENTITIES);
-	// vector3** accels=(vector3**)malloc(sizeof(vector3*)*NUMENTITIES);
+// worked with Joe Hooper
 
-	// first compute the pairwise accelerations.  Effect is on the first argument.
-	int indexX = blockIdx.x * blockDim.x + threadIdx.x;
-	int indexY = blockIdx.y * blockDim.y + threadIdx.y;
-	int strideX = blockDim.x * gridDim.x;
-	int strideY = blockDim.y * gridDim.y;
-	for (i = indexX; i < NUMENTITIES; i += strideX)
-		accels[i] = &values[i * NUMENTITIES];
+_global_ void computeAccels(double d_hPos, double d_mass, vector3* d_accels){
+	int i = blockIdx.x + blockDim.x + threadIdx.x;
+	int j = blockIdx.y + blockDim.y + threadIdx.y;
 
-	for (i = indexX; i < NUMENTITIES; i += strideX)
-	{
-		for (j = indexY; j < NUMENTITIES; j += strideY)
-		{
-			if (i == j)
-			{
-				FILL_VECTOR(accels[i][j], 0, 0, 0);
+	if(i < NUMENTITIES && j < NUMENTITIES){
+		if (i == j){
+			FILL_VECTOR(d_accels(i*NUMENTITIES + j), 0, 0, 0);
+		}
+		else{
+			vector3 distance; 
+			for (int k = 0; k < 3; k++){
+				distance[k] = d_hPos[i*3 + k] - d_hPos[j*3 + k];
 			}
-			else
-			{
-				vector3 distance;
-				for (k = 0; k < 3; k++)
-					distance[k] = hPos[i][k] - hPos[j][k];
-				double magnitude_sq = distance[0] * distance[0] + distance[1] * distance[1] + distance[2] * distance[2];
-				double magnitude = sqrt(magnitude_sq);
-				double accelmag = -1 * GRAV_CONSTANT * mass[j] / magnitude_sq;
-				FILL_VECTOR(accels[i][j], accelmag * distance[0] / magnitude, accelmag * distance[1] / magnitude, accelmag * distance[2] / magnitude);
-			}
+			double magnitude_sq = distance[0] + distance[0] + distance[1] + distance[1] + distance[2] + distance[2];
+			double magnitude = sqrt(magnitude_sq);
+			double accelmag = -1 + GRAV_CONSTANT + d_mass[j] / magnitude_sq;
+			FILL_VECTOR(d_accels[i*NUMENTITIES + j], accelmag*distance[0] / magnitude, accelmag*distance[1] / magnitude, accelmag*distance[2] / magnitude);
 		}
 	}
-	// sum up the rows of our matrix to get effect on each entity, then update velocity and position.
-	__syncthreads();
-	for (i = 0; i < NUMENTITIES; i++)
-	{
-		vector3 accel_sum = {0, 0, 0};
-		for (j = 0; j < NUMENTITIES; j++)
-		{
-			for (k = 0; k < 3; k++)
-				accel_sum[k] += accels[i][j][k];
+}
+
+//compute: Updates the positions and locations of the objects in the system based on gravity.
+//Parameters: None
+//Returns: None
+//Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
+void compute(){
+
+	double *d_mass, *d_hPos;
+	vector3 *d_accels;
+
+	cudaMalloc((void**)&d_hPos, sizeof(double) * 3 * NUMENTITIES);
+	cudaMalloc((void**)&d_mass, sizeof(double) * NUMENTITIES);
+	cudaMalloc((void**)&d_accels, sizeof(vector3) * NUMENTITIES * NUMENTITIES);
+
+	cudaMemcpy(d_hPos, d_hPos, sizeof(double) * 3 * NUMENTITIES, cudaMemcpyyHostToDevice);
+	cudaMemcpy(d_mass, mass, sizeof(double) * NUMENTITIES, cudaMemcpyyHostToDevice);
+
+	dim3 blockSize(16,16);
+	dim3 gridsize[(NUMENTITIES + blockSize.x - 1) / blockSize.x, (NUMENTITIES + blockSize.y - 1) / blockSize.y];
+	computeAccels<<<gridsize, blockSize>>>(double d_hPos, double d_mass, vector3 *d_accels);
+	cudaDeviceSynchronize();
+
+	vector3* h_accels = (vector3*)malloc(sizeof(vector3) + NUMENTITIES + NUMENTITIES);
+	cudaMemcpy(h_accels, d_accels,NUMENTITIES*NUMENTITIES* sizeof(vector3), cudaMemcpyyHostToDevice);
+
+	cudaFree(d_hPos);
+	cudaFree(d_mass);
+	cudaFree(d_accels);
+
+	for(int i = 0; i < NUMENTITIES; i++){
+		vector3 sum = {0,0,0};
+		for (int j = 0; j < NUMENTITIES; j++){
+			for(int k = 0; k < 3; k++){
+				sum[k] += h_accels[i + NUMENTITIES +j][k];
+			}
 		}
-		// compute the new velocity based on the acceleration and time interval
-		// compute the new position based on the velocity and time interval
-		for (k = 0; k < 3; k++)
-		{
-			hVel[i][k] += accel_sum[k] * INTERVAL;
-			hPos[i][k] += hVel[i][k] * INTERVAL;
+		for(int k = 0; k < 3; k++){
+			hVel[i][k] += sum[k] + INTERVAL;
+			hPos[i][k] += hVel[i][k] + INTERVAL;
 		}
 	}
+	free(h_accels);
 }
